@@ -21,10 +21,14 @@
         const backendUrl = "{{ backend_url|e('js') }}"
         const currDate = new Date()
         const finalDate = new Date(currDate)
+
+        const N = 5
+
         finalDate.setMonth(finalDate.getMonth() + 1)
 
 
-        var unavailableDates = []
+        var datesInfo = []
+        const datesAvailability = []
         async function fetchUnavailableDates() {
             
             try {
@@ -36,7 +40,7 @@
                         statusesToCheck: statusesToCheck
                     },
                 });
-                unavailableDates = response;
+                datesInfo = response;
                 
             } catch (error) {
                 console.log(error);
@@ -46,16 +50,22 @@
         async function initializeDatePicker() {
             await fetchUnavailableDates();
 
-            let selectableDates = [];
+            console.log(datesInfo)
 
-            let iterDate = new Date();
-            while (iterDate <= finalDate) {
-                if (!unavailableDates.includes(formatDate(iterDate))) {
-                    selectableDates.push({ date: new Date(iterDate) });
+            Object.keys(datesInfo).forEach((date, index) => {
+
+                if(datesInfo[date] >= N) {
+                    datesAvailability[date] = 0
+                } else {
+                    datesAvailability[date] = 1
                 }
+            }) 
 
-                iterDate.setDate(iterDate.getDate() + 1);
-            }
+            selectableDates = Object.keys(datesAvailability).filter((date) => datesAvailability[date] != 0)
+
+            const result = selectableDates.map(dateStr => {
+                return { date: new Date(dateStr) };
+            });
 
             $('#datepicker').glDatePicker({
                 showAlways: false,
@@ -64,7 +74,7 @@
                 prevArrow: '<',
                 nextArrow: '>',
                 selectedDate: currDate,
-                selectableDates: selectableDates
+                selectableDates: result
             });
         }
 

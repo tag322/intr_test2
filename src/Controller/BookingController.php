@@ -90,10 +90,7 @@ final class BookingController extends AbstractController
     {
         $customFieldID = $req->query->get('customFieldID', 968675);
         $statusesToCheck = $req->query->get('statusesToCheck', "55987554-24374824-24374821");
-
         $statusesToCheck = explode("-", $statusesToCheck);
-
-        $logger->info(json_encode($statusesToCheck));
 
         $httpClient = new Client();
 
@@ -143,26 +140,30 @@ final class BookingController extends AbstractController
             }
         }
 
-        $bookingListed = [];
-        $unavailableDates = [];
-        $N = 5;
+        $dates = [];
+        $startDate = new DateTime(); 
+        $endDate = clone $startDate;
+        $endDate->modify('+1 month'); 
+
+        while ($startDate <= $endDate) {
+            $dateString = $startDate->format('Y-m-d');
+            $dates[$dateString] = 0;
+            $startDate->modify('+1 day');
+        }
 
         foreach ($leads as $lead) {
             foreach ($lead['custom_fields'] as $field) {
                 if ($field['id'] == $customFieldID) {
-                    $bookingListed[] = substr($field['values'][0]['value'], 0, 10);
+                    $date = substr($field['values'][0]['value'], 0, 10);
+                   if (array_key_exists($date, $dates)) {
+                        $dates[$date] += 1;
+                    }
                 }
             }
         }
 
-        $bookingListed = array_count_values($bookingListed);
-
-        $unavailableDates = array_keys(array_filter($bookingListed, function ($count) use ($N) {
-            return $count >= $N;
-        }));
-
         return $this->json(
-            $unavailableDates,
+            $dates,
         );
     }
 
