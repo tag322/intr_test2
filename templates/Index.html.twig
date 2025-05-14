@@ -15,10 +15,13 @@
     <script src="{{ asset('datepicker/glDatePicker.min.js') }}"></script>
 
     <script>
-        const backendUrl = "{{ backend_url|e('js') }}";
-        const currDate = new Date();
-        const finalDate = new Date(currDate);
-        finalDate.setMonth(finalDate.getMonth() + 1);
+        const customFieldID = 968675
+        const statusesToCheck = "55987554-24374824-24374821"
+
+        const backendUrl = "{{ backend_url|e('js') }}"
+        const currDate = new Date()
+        const finalDate = new Date(currDate)
+        finalDate.setMonth(finalDate.getMonth() + 1)
 
 
         var unavailableDates = []
@@ -28,6 +31,10 @@
                 const response = await $.ajax({
                     url: backendUrl + '/fetch_leads',
                     method: 'GET',
+                    data: {
+                        customFieldID: customFieldID,
+                        statusesToCheck: statusesToCheck
+                    },
                 });
                 unavailableDates = response;
                 
@@ -50,8 +57,6 @@
                 iterDate.setDate(iterDate.getDate() + 1);
             }
 
-            console.log(selectableDates);
-
             $('#datepicker').glDatePicker({
                 showAlways: false,
                 allowMonthSelect: true,
@@ -64,15 +69,14 @@
         }
 
         $(document).ready(
-            
             initializeDatePicker()
-        );
+        )
 
         function formatDate(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            const year = date.getFullYear()
+            const month = String(date.getMonth() + 1).padStart(2, '0')
+            const day = String(date.getDate()).padStart(2, '0')
+            return `${year}-${month}-${day}`
         }
     </script>
     {% endblock %}

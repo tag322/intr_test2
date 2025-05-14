@@ -9,6 +9,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use DateTime;
+use Symfony\Component\HttpFoundation\Request;
 
 use Psr\Log\LoggerInterface;
 
@@ -85,8 +86,15 @@ final class BookingController extends AbstractController
     }
 
     #[Route('/fetch_leads', name: 'fetch_leads')]
-    public function fetchBookingLeads(LoggerInterface $logger): JsonResponse 
+    public function fetchBookingLeads(Request $req, LoggerInterface $logger): JsonResponse 
     {
+        $customFieldID = $req->query->get('customFieldID', 968675);
+        $statusesToCheck = $req->query->get('statusesToCheck', "55987554-24374824-24374821");
+
+        $statusesToCheck = explode("-", $statusesToCheck);
+
+        $logger->info(json_encode($statusesToCheck));
+
         $httpClient = new Client();
 
         $date = new DateTime();
@@ -101,11 +109,7 @@ final class BookingController extends AbstractController
                 $response = $httpClient->get($_ENV['YADRO_API_URL'] . '/crm/lead/list', [
                     'query' => [
                         'key' => $_ENV['AMOCRM_API_KEY'],
-                        'status' => [
-                            55987554,
-                            24374824,
-                            30264499,
-                        ],
+                        'status' => $statusesToCheck,
                         'count' => $count,
                         'offset' => $count*$page,
                         'ifmodif' => $date
@@ -116,8 +120,6 @@ final class BookingController extends AbstractController
                 ]);
                 $body = $response->getBody()->getContents();
                 $body = json_decode($body, true);
-
-                $logger->info($body['count']);
             
                 if($body['count'] === 0) {
                     break;
@@ -147,13 +149,13 @@ final class BookingController extends AbstractController
 
         foreach ($leads as $lead) {
             foreach ($lead['custom_fields'] as $field) {
-                if ($field['name'] === 'date_reservation') {
-                    $bookingDates[] = substr($field['values'][0]['value'], 0, 10);
+                if ($field['id'] == $customFieldID) {
+                    $bookingListed[] = substr($field['values'][0]['value'], 0, 10);
                 }
             }
         }
 
-        $bookingListed = array_count_values($bookingDates);
+        $bookingListed = array_count_values($bookingListed);
 
         $unavailableDates = array_keys(array_filter($bookingListed, function ($count) use ($N) {
             return $count >= $N;
