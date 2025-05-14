@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Welcome!{% endblock %}</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+    {% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('datepicker/styles/glDatePicker.default.css') }}">
+    {% endblock %}
+
+    {% block javascripts %}
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script src="{{ asset('datepicker/glDatePicker.min.js') }}"></script>
+
+    <script>
+        const backendUrl = "{{ backend_url|e('js') }}";
+        const currDate = new Date();
+        const finalDate = new Date(currDate);
+        finalDate.setMonth(finalDate.getMonth() + 1);
+
+
+        var unavailableDates = []
+        async function fetchUnavailableDates() {
+            
+            try {
+                const response = await $.ajax({
+                    url: backendUrl + '/fetch_leads',
+                    method: 'GET',
+                });
+                unavailableDates = response;
+                
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
+        async function initializeDatePicker() {
+            await fetchUnavailableDates();
+
+            let selectableDates = [];
+
+            let iterDate = new Date();
+            while (iterDate <= finalDate) {
+                if (!unavailableDates.includes(formatDate(iterDate))) {
+                    selectableDates.push({ date: new Date(iterDate) });
+                }
+
+                iterDate.setDate(iterDate.getDate() + 1);
+            }
+
+            console.log(selectableDates);
+
+            $('#datepicker').glDatePicker({
+                showAlways: false,
+                allowMonthSelect: true,
+                allowYearSelect: false,
+                prevArrow: '<',
+                nextArrow: '>',
+                selectedDate: currDate,
+                selectableDates: selectableDates
+            });
+        }
+
+        $(document).ready(
+            
+            initializeDatePicker()
+        );
+
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+    </script>
+    {% endblock %}
+</head>
+
+<body>
+    {% block body %}
+    <input type="text" id="datepicker" gldp-id="custom" />
+    <div gldp-el="custom" style="width:400px; height:300px; position:absolute; top:70px; left:100px;">
+    </div>
+    {% endblock %}
+</body>
+
+</html>
+
+<style>
+
+</style>
